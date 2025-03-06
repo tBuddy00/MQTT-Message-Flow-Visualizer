@@ -33,7 +33,7 @@ Default Settings
 
   * Topic (default: **/toERP**, alternative: **/toMES**)
 
-* You can modify the topic to /toMES for testing purposes.
+* You can modify the topic to */toMES* for testing purposes.
 
 * Once you click the **Connect** button, it will turn green for 3 minutes if the connection to the broker is successful.
 
@@ -47,7 +47,7 @@ Default Settings
 
   * KU2UWdy8/toMES
 
-* Incoming messages, including their respective topics, will be displayed in the GUI.
+* Incoming messages, including their respective topics, will be displayed in the GUI terminal.
 
 ## **Platform Compatibility**
 
