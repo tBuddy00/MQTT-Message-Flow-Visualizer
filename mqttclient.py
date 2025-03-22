@@ -53,6 +53,13 @@ class MQTTClient:
             self.gui.log_text.config(state=tk.DISABLED)
             return #Beendet Methode, falls Topic leer
 
+        # Use WebSocket transport if enabled
+        if self.gui.websocket_enabled.get():
+            self.client = mqtt.Client(transport = "websockets")
+        else:
+            self.client = mqtt.Client() #default connection
+
+
         # Callback-Funktionen (erneut) setzen und Verbindung (wieder) herstellen
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
