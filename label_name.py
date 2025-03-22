@@ -1,33 +1,32 @@
 #############################################################################
-# PROGRAMM-BEZEICHNUNG
+# PROGRAMM NAME
 #############################################################################
-program_name = "MQTT Message Flow Visualizer"
-frame_name = "Message Flow Visualization"
+PROGRAM_NAME = "MQTT Message Flow Visualizer"
+FRAME_NAME = "Message Flow Visualization"
 #############################################################################
-# BROKER-EINGABE, PORT, TOPIC, CONNECT-BUTTON
+# BROKER INPUT, PORT, TOPIC, CONNECT BUTTON
 #############################################################################
-mqtt_broker = "MQTT Broker:"
-port = "Port:"
-topic = "Topic:"
-connect_button = "Connect"
+MQTT_BROKER = "MQTT Broker:"
+PORT = "Port:"
+TOPIC = "Topic:"
+CONNECT_BUTTON = "Connect"
 #############################################################################
-# KOMPONENTEN IN GUI
+# COMPONENTS IN GUI
 #############################################################################
-#sap = "SAP" #ist ein Bild, anstatt Text
-broker = "Broker"
-ucc = "UCC (SAP)"
+BROKER = "Broker"
+UCC = "UCC (SAP)"
 toMES = "toMES"
 toERP = "toERP"
-dataInterface = "OData Interface"
-mes = "MES"
+DATAINTERFACE = "OData Interface"
+MES = "MES"
 #############################################################################
-# PFEILBESCHRIFTUNG IN GUI
+# ARROW LABELS IN GUI
 #############################################################################
-retrieve_production_order = "Retrieve production order"
-update_production_order = "Update\nproduction order"
-update_production_order2 = "Update production order"
-new_production_order = "New production order"
+RETRIEVE_PRODUCTION_ORDER = "Retrieve production order"
+UPDATE_PRODUCTION_ORDER = "Update\nproduction order"
+UPDATE_PRODUCTION_ORDER2 = "Update production order"
+NEW_PRODUCTION_ORDER = "New production order"
 #############################################################################
-# KEINE-VERBINDUNG SCHRIFTZUG (Rechteck, bevor verbunden wurde)
+# NO-CONNECTION LABEL (Rectangle shown before connection is established)
 #############################################################################
-no_connections = "Currently no connections."
+NO_CONNECTIONS = "Currently no connections."
