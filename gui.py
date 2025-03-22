@@ -37,14 +37,14 @@ class MQTTVisualizerGUI:
     def __init__(self):
         self.root = tb.Window(themename="superhero")  # Erstellt das Hauptfenster mit Bootstrap-Design (GUI-Design)
         self.root.title(label_name.program_name)  # Vergabe GUI-Titel
-        self.root.iconphoto(False, tk.PhotoImage(file = "pictures/htwd-logo.png")) # Icon 
+        self.root.iconphoto(False, tk.PhotoImage(file = "pictures/mqtt.png")) # Icon 
 
         # Sofern 'load_config' nicht vorhanden -> laden von Standard-Werten für Broker, Port und Topic
         self.config = self.load_config() or {"broker": "", "port": 1883, "topic": ""}
         self.mqtt_client = MQTTClient(self) #VERWEIS AUF DIE MQTTCLIENT-KLASSE
         self.broker = self.config.get("broker", "broker.hivemq.com")  # Standard, falls nicht vorhanden
         self.port = self.config.get("port", 1883)
-        self.topic = self.config.get("topic", "KU2UWdy8/toERP")
+        self.topic = self.config.get("topic")
 
         self.create_widgets()  # Widgets werden erstellt
         
