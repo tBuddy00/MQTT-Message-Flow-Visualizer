@@ -3,5 +3,5 @@ name: "MQTT Config"
 data:
   broker: "broker.hivemq.com"
   port: 1883
-  topic: ""
+  topic: "KU2UWdy8/+"
 ...
