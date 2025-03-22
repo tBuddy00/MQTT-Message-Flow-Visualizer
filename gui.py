@@ -98,6 +98,12 @@ class MQTTVisualizerGUI:
 
         #'Connect'-Button in der GUI -> draufklicken löst die 'connect_to_broker'-Methode aus = Verbindung zum Broker wird hergestellt
         ttk.Button(self.top_frame, text=label_name.connect_button, command=self.connect_to_broker).pack(side="left", padx=5)
+       
+        # WebSockets Checkbox
+        self.websocket_enabled = tk.BooleanVar(value = False) # Stores checkbox state
+        self.websocket_button = ttk.Checkbutton(self.top_frame, text = "Use WebSocket", variable = self.websocket_enabled)
+        self.websocket_button.pack(side = "left", padx = 5)
+
 
         # Darstellung des Nachrichtenflusses zwischen den Komponenten (SAP, MQTT-Broker, MES)
         self.canvas_frame = ttk.LabelFrame(self.root, text=label_name.frame_name, padding=10)
