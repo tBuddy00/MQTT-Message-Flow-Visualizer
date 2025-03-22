@@ -104,6 +104,11 @@ class MQTTVisualizerGUI:
         self.websocket_button = ttk.Checkbutton(self.top_frame, text = "Use WebSocket", variable = self.websocket_enabled)
         self.websocket_button.pack(side = "left", padx = 5)
 
+        # TLS Checkbox
+        self.tls_enabled = tk.BooleanVar(value = False) 
+        self.tls_button = ttk.Checkbutton(self.top_frame, text = "Enable TLS Service", variable = self.tls_enabled)
+        self.tls_button.pack(side = "left", padx = 5)
+
 
         # Darstellung des Nachrichtenflusses zwischen den Komponenten (SAP, MQTT-Broker, MES)
         self.canvas_frame = ttk.LabelFrame(self.root, text=label_name.frame_name, padding=10)
