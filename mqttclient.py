@@ -10,6 +10,7 @@ Kurze Erklärung zur Funktion: 'mqttclient.py' enthält ausschließlich die MQTT
 #############################################################################
 import paho.mqtt.client as mqtt
 import tkinter as tk
+import ssl #For TLS certificates
 
 ##############################################################################
 # MQTT-METHODEN + KLASSE
@@ -59,6 +60,10 @@ class MQTTClient:
         else:
             self.client = mqtt.Client() #default connection
 
+        # Enable TLS if selected
+        if self.gui.tls_enabled.get():
+            self.client.tls_set(cert_reqs=ssl.CERT_NONE)
+            self.client.tls_insecure_set(True)
 
         # Callback-Funktionen (erneut) setzen und Verbindung (wieder) herstellen
         self.client.on_connect = self.on_connect
