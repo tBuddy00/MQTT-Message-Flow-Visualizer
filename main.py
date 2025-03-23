@@ -1,10 +1,9 @@
 #############################################################################
-# ERKLÄRUNG
+# DESCRIPTION
 #############################################################################
 """
-Kurze Erklärung zur Funktion: Eine Instanz von der GUI wird erstellt und dann startet die Hauptschleife
-von Tkinter und die Anwendung wird aktiv ausgeführt.
-
+Brief explanation of the function: An instance of the GUI is created and then the 
+main loop of Tkinter is started, which keeps the application running.
 """
 #############################################################################
 # IMPORTS
@@ -12,5 +11,5 @@ von Tkinter und die Anwendung wird aktiv ausgeführt.
 from gui import MQTTVisualizerGUI
 
 if __name__ == "__main__":
-    app = MQTTVisualizerGUI() #ist die Instanz der GUI
-    app.run() #Start der Hauptschleife von Tkinter -> Anwendung startet
+    app = MQTTVisualizerGUI() #Creates an instance of the GUI
+    app.run() #Starts Tkinter's main loop -> application becomes active
