@@ -1,61 +1,60 @@
 #############################################################################
-# ERKLÄRUNG
+# DESCRIPTION
 #############################################################################
 """
-Kurze Erklärung zur Funktion: Im Grunde erstellt und verwaltet die 'gui.py' die grafischen
-    Elemente bzw. die ganze Benutzeroberfläche der GUI, und visualisiert den MQTT-Nachrichtenfluss.
+Brief explanation of the function: The 'gui.py' script creates and manages 
+the graphical elements and the entire user interface of the GUI while visualizing 
+the MQTT message flow.
 """
 #############################################################################
 # IMPORTS
 #############################################################################
-import tkinter as tk #Grundgerüst der GUI-Oberfläche
-from tkinter import * # s. o.
-from tkinter import ttk  # Verantwortlich für Widgets 
-import ttkbootstrap as tb  # Für das GUI-Design
+import tkinter as tk  # Basic structure of the GUI
+from tkinter import *  # Import everything from tkinter
+from tkinter import ttk  # Responsible for widgets
+import ttkbootstrap as tb  # For GUI styling
 from tkinter import Canvas
-import paho.mqtt.client as mqtt #MQTT-Bibliothek
+import paho.mqtt.client as mqtt  # MQTT library
 import yaml
 
-# IMPORT DER LABEL-NAMEN
-import label_name #Lädt die Konfigurationsdatei
-# IMPORT DER MQTT-METHODEN
-from mqttclient import MQTTClient #Importiert die MQTT-Klasse zur Kommunikation
+
+import label_name
+from mqttclient import MQTTClient #Importing the MQTT client class for communication
 #############################################################################
 
-# Merke: Node Red Image zum Nachrichten testen
 
 #############################################################################
-# GUI + METHODEN
+# GUI CLASS + METHODS
 #############################################################################
 class MQTTVisualizerGUI:
     """
-    +++ Aufgaben der Klasse GUI-Klasse +++
+    +++ Responsibilities of the GUI Class +++
 
-    Die Klasse verwaltet die gesamte GUI und stellt die Methoden für die MQTT-Verbindungen und
-    die Animationen bereit.
+    The class manages the entire GUI and provides methods for MQTT connections and 
+    animations.
     """
     def __init__(self):
-        self.root = tb.Window(themename="superhero")  # Erstellt das Hauptfenster mit Bootstrap-Design (GUI-Design)
-        self.root.title(label_name.program_name)  # Vergabe GUI-Titel
+        self.root = tb.Window(themename="superhero")  # Main window with Bootstrap design
+        self.root.title(label_name.PROGRAM_NAME)  # Set GUI title
         self.root.iconphoto(False, tk.PhotoImage(file = "pictures/mqtt.png")) # Icon 
 
-        # Sofern 'load_config' nicht vorhanden -> laden von Standard-Werten für Broker, Port und Topic
+        # If 'load_config' does not exist -> load default values ​​for broker, port and topic
         self.config = self.load_config() or {"broker": "", "port": 1883, "topic": ""}
-        self.mqtt_client = MQTTClient(self) #VERWEIS AUF DIE MQTTCLIENT-KLASSE
-        self.broker = self.config.get("broker", "broker.hivemq.com")  # Standard, falls nicht vorhanden
+       
+        self.mqtt_client = MQTTClient(self) #Reference to MQTT client class
+        self.broker = self.config.get("broker", "broker.hivemq.com")  # 
         self.port = self.config.get("port", 1883)
         self.topic = self.config.get("topic")
 
-        self.create_widgets()  # Widgets werden erstellt
-        
-        self.connection_arrows = {}  # Verbindungspfeile für Nachrichtenfluss-Diagramm
+        self.create_widgets()  # Create widgets
+        self.connection_arrows = {}  # Connection arrows for message flow diagram
 
     #############################################################################
-    # LADEN DER YAML-DATEI
+    # LOADING CONFIG YAML FILE (HIVEMQ)
     #############################################################################
     def load_config(self):
         """
-        Lädt die YAML-Datei und gibt die Daten zurück
+        Loads the YAML file and returns the data
         """
         try:
             with open("config.yaml", "r") as file:
@@ -72,54 +71,57 @@ class MQTTVisualizerGUI:
     #############################################################################
     def create_widgets(self):
         """
-        Erstellung der GUI-Widgets (Eingabefelder), mit denen der Nutzer interagiert.
+        Creates GUI widgets (input fields, buttons, etc.) for user interaction.
+
+        Input: None
+        Output: None
         """
-        # Äußerster Frame
+        # Main Frame
         self.top_frame = ttk.Frame(self.root, padding=10)
         self.top_frame.pack(fill="x")
 
-        # Broker-Eingabe wird hier getätigt
-        ttk.Label(self.top_frame, text=label_name.mqtt_broker).pack(side="left", padx=5)
+        # MQTT Broker (Read-only input field)
+        ttk.Label(self.top_frame, text=label_name.MQTT_BROKER).pack(side="left", padx=5)
         self.broker_entry = ttk.Entry(self.top_frame, width=30)
         self.broker_entry.insert(0, self.broker)
         self.broker_entry.pack(side="left", padx=5)
 
-        #Port-Eingabe wird hier getätigt
-        ttk.Label(self.top_frame, text=label_name.port).pack(side="left", padx=5)
+        # Port Input
+        ttk.Label(self.top_frame, text=label_name.PORT).pack(side="left", padx=5)
         self.port_entry = ttk.Entry(self.top_frame, width=5)
         self.port_entry.insert(0, str(self.port))
         self.port_entry.pack(side="left", padx=5)
 
-        #Topic-EIngabe wird hier getätigt
-        ttk.Label(self.top_frame, text=label_name.topic).pack(side="left", padx=5)
+        # Topic Input
+        ttk.Label(self.top_frame, text=label_name.TOPIC).pack(side="left", padx=5)
         self.topic_entry = ttk.Entry(self.top_frame, width=20)
         self.topic_entry.insert(0, self.topic)
         self.topic_entry.pack(side="left", padx=5)
 
-        #'Connect'-Button in der GUI -> draufklicken löst die 'connect_to_broker'-Methode aus = Verbindung zum Broker wird hergestellt
-        ttk.Button(self.top_frame, text=label_name.connect_button, command=self.connect_to_broker).pack(side="left", padx=5)
+        # Connect Button - Establishes connection to the broker
+        self.connect_button = ttk.Button(self.top_frame, text=label_name.CONNECT_BUTTON, command=self.connect_to_broker)
+        self.connect_button.pack(side="left", padx=5)
        
         # WebSockets Checkbox
         self.websocket_enabled = tk.BooleanVar(value = False) # Stores checkbox state
-        self.websocket_button = ttk.Checkbutton(self.top_frame, text = "Use WebSocket", variable = self.websocket_enabled)
+        self.websocket_button = tk.Checkbutton(self.top_frame, text="Use WebSocket", variable=self.websocket_enabled, command=self.websocket_status_message)
         self.websocket_button.pack(side = "left", padx = 5)
 
         # TLS Checkbox
         self.tls_enabled = tk.BooleanVar(value = False) 
-        self.tls_button = ttk.Checkbutton(self.top_frame, text = "Enable TLS Service", variable = self.tls_enabled)
+        self.tls_button = tk.Checkbutton(self.top_frame, text="Enable TLS Service", variable=self.tls_enabled, command=self.tls_status_message)
         self.tls_button.pack(side = "left", padx = 5)
 
-
-        # Darstellung des Nachrichtenflusses zwischen den Komponenten (SAP, MQTT-Broker, MES)
-        self.canvas_frame = ttk.LabelFrame(self.root, text=label_name.frame_name, padding=10)
+        # Representation of the message flow between the components (SAP, MQTT broker, MES)
+        self.canvas_frame = ttk.LabelFrame(self.root, text=label_name.FRAME_NAME, padding=10)
         self.canvas_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.canvas = Canvas(self.canvas_frame, bg="white", height=400)
         self.canvas.pack(fill="both", expand=True)
 
-        self.draw_static_diagram() #Zeichnet die feste Struktur der Komponenten
+        self.draw_static_diagram() # Draws the fixed structure of the components
 
-        # Ausgabe aller Nachrichten (Nachrichtenfeld in GUI)
+        # Output all messages (message field in GUI)
         self.log_frame = ttk.LabelFrame(self.root, text="Messages", padding=10)
         self.log_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -130,7 +132,12 @@ class MQTTVisualizerGUI:
     def draw_static_diagram(self):
         self.canvas.delete("all")
         """
-        SAP --> MES Animation
+        Draws the static diagram representing the MQTT message flow.
+        This includes visualizing SAP, MES, the MQTT broker, data interfaces,
+        and connection arrows.
+
+        Input: None
+        Output: None
         """
         # SAP
         self.sap_img = PhotoImage(file="pictures/sap-logo.png")
@@ -138,13 +145,13 @@ class MQTTVisualizerGUI:
         self.canvas.create_image(115, 180, image=resized_sap_img)
         self.sap_img_resized = resized_sap_img
     
-        # MQTT Broker
+        # MQTT Broker as a rectangle
         self.canvas.create_rectangle(200, 100, 500, 300, fill="#FFD700", outline="black", width=2, tags="broker")
-        self.canvas.create_text(350, 130, text=label_name.broker, font=("Arial", 12, "bold"))
+        self.canvas.create_text(350, 130, text=label_name.BROKER, font=("Arial", 12, "bold"))
 
-        # Topics im Broker
+        # Topics within the MQTT Broker (represented as smaller rectangles)
         self.canvas.create_rectangle(310, 160, 390, 190, fill="#FF9966", outline="black", width=1, tags="ucc")
-        self.canvas.create_text(350, 175, text=label_name.ucc, font=("Arial", 10))
+        self.canvas.create_text(350, 175, text=label_name.UCC, font=("Arial", 10))
 
         self.canvas.create_rectangle(310, 195, 390, 220, fill="#FF9966", outline="black", width=1, tags="toMES")
         self.canvas.create_text(350, 209, text=label_name.toMES, font=("Arial", 10))
@@ -154,62 +161,92 @@ class MQTTVisualizerGUI:
 
         # Data Interface 
         self.canvas.create_rectangle(275, 320, 430, 380, fill="lightblue", outline="black", width=2, tags="data_interface")
-        self.canvas.create_text(350, 350, text=label_name.dataInterface, font=("Arial", 12, "bold"))
+        self.canvas.create_text(350, 350, text=label_name.DATAINTERFACE, font=("Arial", 12, "bold"))
 
         # MES
         self.canvas.create_rectangle(550, 150, 650, 210, fill="lightgreen", outline="black", width=2, tags="mes")
-        self.canvas.create_text(600, 180, text=label_name.mes, font=("Arial", 12, "bold"))
+        self.canvas.create_text(600, 180, text=label_name.MES, font=("Arial", 12, "bold"))
 
-        # Verbindungspfeile
+        # Connection Arrows
         self.canvas.create_line(155, 170, 310, 170, arrow="last", width=4)  # SAP ---> UCC (SAP)
         self.canvas.create_line(100, 210, 100, 350, arrow="first", width=6)  # SAP vertical arrow
         self.canvas.create_line(100, 350, 275, 350, arrow="last", width=6)  # SAP horizontal to Data Interface
 
-        self.canvas.create_line(310, 180, 279, 180, arrow="last", width=4)  # Horizontal von SAP (UCC) (linksseitig)
-        self.canvas.create_line(280, 180, 280, 320, arrow="last", width=4)  # Vertikal runter von SAP UCC zu Data Interface
+        self.canvas.create_line(310, 180, 279, 180, arrow="last", width=4)  # Horizontal from SAP (UCC) (left side)
+        self.canvas.create_line(280, 180, 280, 320, arrow="last", width=4)  # Vertical arrow down from SAP UCC to Data Interface
 
-        self.canvas.create_line(390, 240, 600, 240, arrow="first", width=4)  # Horizontaler Pfeil zu toERP
-        self.canvas.create_line(600, 240, 600, 210, arrow="first", width=4)  # Vertikal nach unten von MES 
+        self.canvas.create_line(390, 240, 600, 240, arrow="first", width=4)  # Horizontal arrows to toERP
+        self.canvas.create_line(600, 240, 600, 210, arrow="first", width=4)  # Vertical arrow from MES 
 
-        self.canvas.create_line(300, 320, 300, 205, arrow="last", width=4)  # Vertikal von Data Interface
-        self.canvas.create_line(300, 208, 315, 208, arrow="last", width=4)  # Horizontal zu MES
+        self.canvas.create_line(300, 320, 300, 205, arrow="last", width=4)  # Vertical from Data Interface
+        self.canvas.create_line(300, 208, 315, 208, arrow="last", width=4)  # Horizontal to MES
 
-        self.canvas.create_line(390, 200, 550, 200, arrow="last", width=4)  # Verbindung von toMES zu MES
-        self.canvas.create_line(350, 250, 350, 320, arrow="last", width=4)  # Vertikaler Pfeil von toERP zu Data Interface       
-
+        self.canvas.create_line(390, 200, 550, 200, arrow="last", width=4)  # Connection from toMES to MES
+        self.canvas.create_line(350, 250, 350, 320, arrow="last", width=4)  # Vertical arrows from toERP to Data Interface       
         
-        #Hinweis: Keine aktuellen Verbindungen
+        # Message indicating "No Current Connections"
         self.canvas.create_rectangle(200, 10, 500, 50, fill="grey", outline="black", width=2, tags="no_connection2") 
-        self.no_connection_text = self.canvas.create_text(350, 30, text=label_name.no_connections, font=("Arial", 15, "italic"), fill="black", tags="no_connection")
+        self.no_connection_text = self.canvas.create_text(350, 30, text=label_name.NO_CONNECTIONS, font=("Arial", 15, "italic"), fill="black", tags="no_connection")
 
     def draw_connection_arrows(self):
         """
-        Stellt die Beschriftung auf den Pfeilen visuell dar.
+        Draws text labels on the arrows to visually represent the message flow between components.
+
+        Input: None
+        Output: None
         """
-        # SAP zu Data Interface
-        self.canvas.create_text(190, 335, text=label_name.retrieve_production_order, font=("Arial", 8, "bold"), fill="white")
-        # Data Interface zu SAP
-        self.canvas.create_text(105, 260, text=label_name.update_production_order, font=("Arial", 8, "bold"), anchor="w", fill="white")
-        # MES zu Data Interface
-        self.canvas.create_text(470, 250, text=label_name.update_production_order2, font=("Arial", 8, "bold"), fill="white")
-        # Data Interface zu MES
-        self.canvas.create_text(400, 190, text=label_name.new_production_order, font=("Arial", 8, "bold"), anchor="w", fill="white")
+        # SAP to Data Interface
+        self.canvas.create_text(190, 335, text=label_name.RETRIEVE_PRODUCTION_ORDER, font=("Arial", 8, "bold"), fill="white")
+        # Data Interface to SAP
+        self.canvas.create_text(105, 260, text=label_name.UPDATE_PRODUCTION_ORDER, font=("Arial", 8, "bold"), anchor="w", fill="white")
+        # MES to Data Interface
+        self.canvas.create_text(470, 250, text=label_name.UPDATE_PRODUCTION_ORDER2, font=("Arial", 8, "bold"), fill="white")
+        # Data Interface to MES
+        self.canvas.create_text(400, 190, text=label_name.NEW_PRODUCTION_ORDER, font=("Arial", 8, "bold"), anchor="w", fill="white")
+
+    def websocket_status_message(self):
+        """
+        Logs a message when the WebSocket checkbox is activated or deactivated.
+        """
+        self.log_text.config(state=tk.NORMAL)
+        if self.websocket_enabled.get():
+            self.log_text.insert("end", "\nEnabled WebSocket service.\n")
+        else:
+            self.log_text.insert("end", "\nDisabled WebSocket service.\n")
+        self.log_text.config(state=tk.DISABLED)
+
+    def tls_status_message(self):
+        """
+        Logs a message when the TLS checkbox is activated or deactivated.
+        """
+        self.log_text.config(state=tk.NORMAL)
+        if self.tls_enabled.get():
+            self.log_text.insert("end", "\nEnabled TLS service.\n")
+        else:
+            self.log_text.insert("end", "\nDisabled TLS service.\n")
+        self.log_text.config(state=tk.DISABLED)
 
     ##############################################################################
-    # MQTT-METHODE: VERWEIS AUF MQTT-CLIENT-METHODE
+    # MQTT METHOD: REFERENCE TO MQTT CLIENT METHOD
     ##############################################################################
-    def connect_to_broker(self): #Stellt die Verbindung mit dem Broker her
+    def connect_to_broker(self): # Establishes the connection with the broker
         self.mqtt_client.connect_to_broker()
 
     ##############################################################################
-    # ANIMATIONEN
+    # ANIMATIONS
     ##############################################################################
     def start_animation(self, topic):
         """
-        Startet die Animation des Nachrichtenflusses 
-        nacheinander, in Abhängigkeit vom Topic.
+        Starts the message flow animation depending on the given topic. 
+        The animation is executed in steps and visualizes the message direction.
 
-        Aktuell vorhandene Topics: 'toERP' und 'toMES'.
+        Supported topics: 'toERP', 'toMES'
+
+        Input:
+            topic (str): The MQTT topic that triggers the corresponding animation
+            
+        Output:
+            None
         """
         self.current_image_id = None
 
@@ -220,101 +257,149 @@ class MQTTVisualizerGUI:
         else:
             print(f"Unknown topic: '{topic}'.")
     ##############################################################################
-    # Animation 'toMES'-Topic - ANFANG
+    # Animation 'toMES'-Topic - BEGINNING
     ############################################################################## 
     def animate_sap_to_ucc(self):
         """
-        Startet den Nachrichtenfluss von SAP zu UCC.
-        
-        Ablauf:
-            --> liest ein Bild aus einer Datei ein,
-            --> verkleinert das Bild auf den vorgegebenen Anfangskoordinaten,
-            --> platziert es optisch an den wichtigen Punkten und das nach genau 3 Sekunden 
+        Starts the animation of the message flow from SAP to UCC.
+
+        Workflow:
+            - Loads an image from file
+            - Resizes the image to specified dimensions
+            - Places it at the defined start position
+            - Schedules the next animation step after a delay (1.5 seconds)
+
+        Input:
+            None
+
+        Output:
+            None
         """
         self.image = PhotoImage(file="pictures/yellow-envelope.png")
         resized_image = self.image.subsample(9, 9) #Verkleinerung des Bildes (Stauchung, Streckung)
         self.current_image_id = self.canvas.create_image(225, 150, image=resized_image) #Startposition vom Bild
         self.image_resized = resized_image #Neues Bild wird vorläufig gespeichert
-        self.root.after(3000, self.animate_below_retrieve) #geht zur nächsten Animation über
+        self.root.after(1500, self.animate_below_retrieve) #geht zur nächsten Animation über
 
     def animate_below_retrieve(self):
         """
-        Verschiebt das Bild - ausgehend von den letzten Koordinaten - an eine neue Position, sodass es visuell den Weg
-        von SAP zum nächsten Schritt (Retrieve production order) andeutet.
+        Moves the image from its current coordinates to a new position to visually 
+        represent the message flow from SAP to the next step (Retrieve Production Order).
+
+        Input:
+            None
+
+        Output:
+            None
         """
         if self.current_image_id:
-            self.canvas.coords(self.current_image_id, 190, 315) #Neue Bild-Position
-        self.root.after(3000, self.animate_to_mes) #Neue Bild-Koordinaten nach 3 Sekunden
+            self.canvas.coords(self.current_image_id, 190, 315) # Move image to a new position
+        self.root.after(1500, self.animate_to_mes) # Schedule the next animation step
 
     def animate_to_mes(self):
         """
-        Verschiebt das Bild weiter, sodass es den Weg von der aktuellen Position zum Topic
-        'toMES' andeutet.
+        Moves the image further to visually indicate the message flow 
+        from the current position to the 'toMES' topic.
+
+        Input:
+            None
+        Output:
+            None
         """
         if self.current_image_id:
             self.canvas.coords(self.current_image_id, 318, 265)
-        self.root.after(3000, self.animate_new_po)
+        self.root.after(1500, self.animate_new_po)
 
     def animate_new_po(self):
         """
-        Verschiebt das Bild weiter, um die Koordinten 'New production order' zu erreichen. Sobald
-        'New production order' erreicht ist, wird die Animation beendet.
+        Moves the image further to reach the 'New production order' coordinates. 
+        Once the target is reached, the animation ends.
+
+        Input:
+            None
+        Output:
+            None
         """
         if self.current_image_id:
             self.canvas.coords(self.current_image_id, 440, 170)
-            self.root.after(3000, self.finish_animation)
+            self.root.after(1500, self.finish_animation)
     ##############################################################################
-    # Animation 'toMES'-Topic - ENDE
+    # Animation 'toMES'-Topic - END
     ############################################################################## 
     ##############################################################################
-    # Animation 'toERP'-Topic - Anfang
+    # Animation 'toERP'-Topic - BEGINNING
     ############################################################################## 
     def animate_to_erp(self):
         """
-        Startet die Animation für den Nachrichtenfluss von MES zu SAP.
+        Starts the animation for the message flow from MES to SAP.
 
-        Ablauf: 
-            --> liest ein anderes Bild ein,
-            --> verkleinert das neue Bild wieder,
-            --> platziert das Bild an den vorgegebenen Anfangskoordinaten und setzt den ersten Animationsschritt
-                nach 3 Sekunden
+        Process:
+            - Loads a different image,
+            - Resizes it,
+            - Places it at the defined starting coordinates,
+            - Begins the first animation step after 1.5 seconds.
+
+        Input:
+            None
+        Output:
+            None
         """
         self.image = PhotoImage(file="pictures/red-envelope.png")
         resized_image = self.image.subsample(13, 13)
         self.current_image_id = self.canvas.create_image(430, 220, image=resized_image)
         self.image_resized = resized_image 
-        self.root.after(3000, self.move_to_erp) 
+        self.root.after(1500, self.move_to_erp) 
    
     def move_to_erp(self):
         """
-        Verschiebt das Bild von der aktuellen Position weiter in Richtung 'toERP'-Topic.
+        Moves the image from the current position further toward the 'toERP' topic.
+
+        Input:
+            None
+        Output:
+            None
         """
         if self.current_image_id:
             self.canvas.coords(self.current_image_id, 370, 280)
-        self.root.after(3000, self.move_to_odata)
+        self.root.after(1500, self.move_to_odata)
 
     def move_to_odata(self):
         """
-        Verschiebt das Bild weiter, sodass es den Übergang vom 'toERP'-Topic zu ODataInterface visuell 
-        darstellt und dann bei SAP beendet.
+        Moves the image further, showing the transition from the 'toERP' topic 
+        to the OData interface and ultimately back to SAP.
+
+        Input:
+            None
+        Output:
+            None
         """
         if self.current_image_id:
             self.canvas.coords(self.current_image_id, 80, 250)
-        self.root.after(3000, self.finish_animation)
+        self.root.after(1500, self.finish_animation)
   
     def finish_animation(self):
         """
-        Beendet die Animation, Bild wird von Canvas gelöscht.
+        Ends the animation by deleting the image from the canvas.
+
+        Input:
+            None
+        Output:
+            None
         """
         if self.current_image_id:
             self.canvas.delete(self.current_image_id)
         self.current_image_id = None #Soll anzeigen, dass keine Animation mehr aktiv ist
     ##############################################################################
-    # Animation 'toERP'-Topic - ENDE
+    # Animation 'toERP'-Topic - END
     ############################################################################## 
     def highlight_flow(self):
         """
-        Hebt temporär die Verbindungspfeile im Diagramm hervor.
+        Temporarily highlights the connection arrows in the diagram.
+
+        Input:
+            None
+        Output:
+            None
         """
         for arrow in self.connection_arrows.values():
             self.canvas.itemconfig(arrow, fill="red")
@@ -322,6 +407,14 @@ class MQTTVisualizerGUI:
     
     # Startet die Hauptschleife und wartet dann auf eine Benutzerinteraktion
     def run(self):
+        """
+        Starts the main event loop and waits for user interaction.
+
+        Input:
+            None
+        Output:
+            None
+        """
         self.root.mainloop()
 
 if __name__ == "__main__":
