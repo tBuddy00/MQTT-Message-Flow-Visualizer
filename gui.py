@@ -388,7 +388,7 @@ class MQTTVisualizerGUI:
         """
         if self.current_image_id:
             self.canvas.delete(self.current_image_id)
-        self.current_image_id = None #Soll anzeigen, dass keine Animation mehr aktiv ist
+        self.current_image_id = None
     ##############################################################################
     # Animation 'toERP'-Topic - END
     ############################################################################## 
@@ -405,7 +405,6 @@ class MQTTVisualizerGUI:
             self.canvas.itemconfig(arrow, fill="red")
         self.root.after(500, lambda: [self.canvas.itemconfig(arrow, fill="black") for arrow in self.connection_arrows.values()])
     
-    # Startet die Hauptschleife und wartet dann auf eine Benutzerinteraktion
     def run(self):
         """
         Starts the main event loop and waits for user interaction.
