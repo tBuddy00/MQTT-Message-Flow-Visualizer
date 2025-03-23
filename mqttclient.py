@@ -1,9 +1,9 @@
 #############################################################################
-# ERKLÄRUNG
+# DESCRIPTION
 #############################################################################
 """
-Kurze Erklärung zur Funktion: 'mqttclient.py' enthält ausschließlich die MQTT-Methoden (+ Klasse), 
-    die zur Kommunikation mit einem MQTT-Broker dienlich sind.
+Short description of the functionality: 'mqttclient.py' contains only the MQTT methods 
+and class required for communication with an MQTT broker.
 """
 #############################################################################
 # IMPORTS
@@ -11,42 +11,48 @@ Kurze Erklärung zur Funktion: 'mqttclient.py' enthält ausschließlich die MQTT
 import paho.mqtt.client as mqtt
 import tkinter as tk
 import ssl #For TLS certificates
+import traceback #For error handling 
 
 ##############################################################################
-# MQTT-METHODEN + KLASSE
+# MQTT METHODS + CLASS
 ##############################################################################
 class MQTTClient:
     """
-    +++ Aufgaben der MQTT-Klasse +++ 
+    +++ Responsibilities of the MQTT class +++
 
-    1. Aufbau der Verbindung zum MQTT-Broker
-    2. Registrierung der Callback-Funktionen, die bei Verbindungsaufbau
-        und Nachrichtenempfang aufgerufen werden
-    3. GUI-Aktualisierungen an das GUI-Objekt (bzw. Instanz) weitergeben
+    1. Establish connection to the MQTT broker
+    2. Register callback functions for connection and message events
+    3. Pass GUI updates back to the GUI instance
     """
-    def __init__(self, gui): #PARAMETER AUF GUI-OBJEKT
-        self.gui = gui  # REFERENZ AUF DAS GUI-OBJEKT
-        self.client = mqtt.Client() #Erzeugt MQTT-CLient-Instanz
+    def __init__(self, gui): 
+        """
+        Input: gui (MQTTVisualizerGUI), 
+        Output: None
+        """
+        self.gui = gui  # Reference to the GUI object
+        self.client = mqtt.Client() # Create MQTT client instance
         # Callback-Funktionen
-        self.client.on_connect = self.on_connect #Aufruf sobald Verbindung hergestellt
-        self.client.on_message = self.on_message #Aufruf sobald Nachricht empfangen
+        self.client.on_connect = self.on_connect # Callback on successful connection
+        self.client.on_message = self.on_message # Callback on incoming message
         self.topic = None
 
     def connect_to_broker(self):
         """
-        Wird gerufen, sobald der Nutzer explizit auf den 'Connect'-Button 
-        in der GUI klickt.
+        Called when the user clicks the 'Connect' button in the GUI.
+
+        Input: None,
+        Output: None
+    
         """
-        # Werte aus den Eingabefeldern in der GUI holen
-        broker = self.gui.broker_entry.get() #Brokeradresse
-        port = int(self.gui.port_entry.get()) #Portnummer als Integer
-        self.topic = self.gui.topic_entry.get().strip() #Topic
-                                                # .strip() entfernt einfach vorangegangene oder führende Leerzeichen
+        broker = self.gui.broker_entry.get() # Broker address (HIVEMQ)
+        port = int(self.gui.port_entry.get()) # Port as int
+        self.topic = self.gui.topic_entry.get().strip() # #Topic - Remove leading/trailing spaces
+                                                
         """
-        Schreibt eine Information, wie das evtl. fehlen von einem Topic,
-        in das Log-Feld in der GUI und sperrt es dann wieder mit [...]tk.DISABLED --> sonst ist es ein Eingabefeld
-        
-        Prüft ob Topic eingegeben wurde.
+        Writes information, such as the possible absence of a topic,
+        into the log field in the GUI and then locks it again with [...]tk.DISABLED --> otherwise it is an input field.
+
+        Checks whether a topic has been entered.
         """
         if not self.topic:
             self.gui.log_text.config(state=tk.NORMAL)
@@ -65,62 +71,75 @@ class MQTTClient:
             self.client.tls_set(cert_reqs=ssl.CERT_NONE)
             self.client.tls_insecure_set(True)
 
-        # Callback-Funktionen (erneut) setzen und Verbindung (wieder) herstellen
+        # Set callbacks and attempt connection
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-        self.client.connect(broker, port, 180)  # Keep-Alive-Time
-        self.client.loop_start() #startet separaten Thread im selben Netzwerk
 
-        #Informiere Nutzer über positive Verbindungsherstellung
+        """
+        Keep-Alive-Time: 180 Sec
+        """
+        try:
+            self.client.connect(broker, port, 180) # Keep-Alive-Time
+            self.client.loop_start()
+        except Exception as e:
+                self.gui.log_text.config(state=tk.NORMAL)
+                self.gui.log_text.insert("end", f"\n+++ Error: Connection failed! - '{e}' +++ \n")
+                self.gui.log_text.insert("end", f"\n+++ ERROR-TRACEBACK: {traceback.format_exc()} +++\n")
+                self.gui.log_text.config(state=tk.DISABLED)
+                return
+
+        # On success: log to GUI
         self.gui.log_text.config(state=tk.NORMAL)
         self.gui.log_text.insert("end", f"\nConnected with broker '{broker}'\nSubscribing to topic: '{self.topic}'")
         self.gui.log_text.config(state=tk.DISABLED)
 
-        # 'Connect'-Button wird grün, solange Keep-Alive-Time aktiv ist -> aktuell 3 Minuten
-        connect_button = self.gui.top_frame.winfo_children()[-1]  # Letztes Element im Frame ist der Button selbst
-        original_color = connect_button.cget("style") #Speichert ursprünglichen Button-Style
-        connect_button.configure(style="success.TButton") #Wird vorrübergehend Grün = Verbindung hergestellt (3 Minuten lang)
+        # Connect' button turns green as long as Keep-Alive-Time is active -> currently 3 minutes
+        connect_button = self.gui.top_frame.winfo_children()[-1]  # The last element in the frame is the button itself
+        original_color = connect_button.cget("style") # Saves original button style
+        connect_button.configure(style="success.TButton") #Temporarily green = connection established (for 3 minutes)
+        
+        # Timer for resetting the Connect button + Disconnected message
         self.gui.root.after(180 * 1000, lambda: connect_button.configure(style=original_color))
 
-        # Entferne den Hinweis "Keine aktuellen Verbindungen"
+        # Removes the "No current connections" message
         self.gui.canvas.delete("no_connection")
         self.gui.canvas.delete("no_connection2")
-
         self.gui.draw_connection_arrows()
 
     def on_connect(self, client, userdata, flags, rc):
         """
-        Callback-Funktion die aufgerufen wird, sobald der MQTT-Client
-        eine Antwort vom Broker auf den Verbindungsversuch erhält.
+        Callback function when MQTT client connects.
 
-        Kurze Erklärung zu Parametern:
-            - client --> ist der MQTT-Client
-            - userdata --> benutzdefinierte Daten (ungenutzt)
-            - flags --> sind die Antworten vom Broker
-            - rc --> Rückgabecode (Erfolgreich = 0; Fehler != 0)
+        Parameters:
+        - client: the MQTT client instance
+        - userdata: custom user data (not used)
+        - flags: response flags from the broker
+        - rc: result code (0 = success)
 
+        Input: multiple MQTT-specific objects; 
+        Output: None
         """
-        #Erfolgreiche-Verbindung mit Erfolgsmeldung
+        # Successfull connection
         if rc == 0:
             self.gui.log_text.config(state=tk.NORMAL)
             self.gui.log_text.insert("end", " - Successfully connected.\n")
             self.gui.log_text.config(state=tk.DISABLED)
-            client.subscribe(self.topic + "/#") #MQTT-Wildecard -> abboniere das Topic UND alle Unterthemen
-        #Fehlermeldung mit Rückmeldung
+            client.subscribe(self.topic + "/#") #MQTT Wildecard -> subscribe to all subtopics
+        
+        # Error message
         else:
             self.gui.log_text.config(state=tk.NORMAL)
-            self.gui.log_text.insert("end", f"Connection failed with error code '{rc}'.\n")
+            self.gui.log_text.insert("end", f" -->  +++ Connection failed with error code '{rc}'. +++\n")
             self.gui.log_text.config(state=tk.DISABLED)
 
     def on_message(self, client, userdata, message):
         """
-        Callback-Funktion, sobald eine Nachricht empfangen wird.
+        Callback function triggered upon receiving an MQTT message.
 
-        Verweis auf die GUI-Animation: Je nach Topic wird eine andere Animation ausgeführt.
+        Depending on the subtopic, a different animation is triggered.
 
-        Kurze Erklärung zu Parameter:
-            - message: empfangene Nachricht (+ Topic + Payload) 
-                    --> wird von Binärcode in lesbaren für Menschen verständlichen String übersetzt
+        Input: MQTT message components; 
+        Output: None
         """
         incoming_message = f"\nTopic: '{message.topic}'  +++ Incoming message: '{message.payload.decode('utf-8')}' +++\n"
         self.gui.log_text.config(state=tk.NORMAL)
@@ -129,14 +148,15 @@ class MQTTClient:
         self.gui.log_text.config(state=tk.DISABLED)
 
         """
-        Basierend auf dem Subtopic wird eine Animation ausgelöst sobald die
-        Eingangsnachricht eines der Topics enthält
+        Based on the subtopic, an animation is triggered as soon as the input message 
+        contains one of the topics
         """
-        subtopic = message.topic.split("/")[-1] #Filtern des subtopics
-        # Unterscheidung der Eingangsnachricht zur Animation
+        subtopic = message.topic.split("/")[-1] # Filtering the subtopics
+        
+        # Differentiation of the input message to the animation
         if subtopic == 'toERP':
             self.gui.start_animation('toERP')
         elif subtopic == 'toMES':
             self.gui.start_animation('toMES')
         else:
-            print(f"Unknown topic: '{message.topic}'.") #Gibt Fehler wenn Topic unbekannt
+            print(f"Unknown topic: '{message.topic}'.")
