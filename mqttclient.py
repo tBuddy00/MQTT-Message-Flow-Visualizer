@@ -94,12 +94,17 @@ class MQTTClient:
         self.gui.log_text.config(state=tk.DISABLED)
 
         # Connect' button turns green as long as Keep-Alive-Time is active -> currently 3 minutes
-        connect_button = self.gui.top_frame.winfo_children()[-1]  # The last element in the frame is the button itself
-        original_color = connect_button.cget("style") # Saves original button style
-        connect_button.configure(style="success.TButton") #Temporarily green = connection established (for 3 minutes)
+        connect_button = self.gui.connect_button 
+
+        try:
+            original_style = connect_button.cget("style")
+        except tk.TclError:
+            original_style = ""
+
+        connect_button.configure(style="success.TButton")
         
         # Timer for resetting the Connect button + Disconnected message
-        self.gui.root.after(180 * 1000, lambda: connect_button.configure(style=original_color))
+        self.gui.root.after(180 * 1000, lambda: connect_button.configure(style=original_style))
 
         # Removes the "No current connections" message
         self.gui.canvas.delete("no_connection")
